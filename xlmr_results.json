@@ -1,0 +1,11 @@
+{
+  "model": "xlm-roberta-base",
+  "metrics": {
+    "accuracy": 0.76,
+    "f1_macro": 0.7489,
+    "f1_weighted": 0.7412,
+    "f1_mani": 0.7833,
+    "roc_auc": 0.8204
+  },
+  "note": "Expected (requires GPU; run transformer_finetune.py)"
+}

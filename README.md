@@ -1,58 +1,82 @@
-# banmani-manipulation-detection
-Bangla News Manipulation Detection (BanMANI) — CSE 3812 Research Project
-# BanMANI: Bangla News Manipulation Detection
+# BanMANI Manipulation Detection — Research Pipeline
 
-**Course:** CSE 3812 — Artificial Intelligence  
-**Dataset:** BanMANI (800 Bangla news samples, binary: MANI / NO_MANI)
+## Dataset
+- **BanMANI.csv** — 800 Bangla news samples (650 train / 150 test)
+- Labels: `MANI` (532) | `NO_MANI` (268)
+- Columns: `category`, `data_type`, `mani_status`, `altered_excerpt`, `original_excerpt`, `mani_news`, `original_news_article`
 
-## Project Overview
-This project evaluates multiple approaches for detecting manipulated Bangla news claims:
-- Stage 1: Classical ML (TF-IDF + Logistic Regression / LinearSVC)
-- Stage 2: Transformer Fine-tuning (mBERT, XLM-RoBERTa, BanglaBERT)
-- Stage 3: Open-Source LLM Zero/Few-Shot (Qwen2.5-7B, Llama-3.1-8B)
+## Project Structure
+```
+banmani_research/
+├── data/
+│   ├── BanMANI.csv
+│   └── preprocess.py          ← Bangla normalization + text combination
+├── models/
+│   ├── baseline_tfidf.py      ← TF-IDF + LR / SVM (no GPU needed)
+│   ├── transformer_finetune.py← mBERT / XLM-R / BanglaBERT fine-tuning
+│   └── llm_evaluation.py      ← Claude API zero-shot / few-shot / CoT
+├── results/
+│   ├── analysis.py            ← Error analysis + comparison tables
+│   └── outputs/               ← Saved results (JSON, LaTeX)
+└── run_pipeline.py            ← Main CLI entry point
+```
 
-## Results Summary
+## Quick Start
 
-| Model | Type | F1 Macro | F1 MANI |
-|---|---|---|---|
-| TF-IDF word + LR | Classical ML | 0.5717 | 0.6517 |
-| TF-IDF char + LR | Classical ML | 0.5656 | 0.6235 |
-| TF-IDF + LinearSVC | Classical ML | 0.5579 | 0.6404 |
-| BanglaBERT | Transformer | 0.4258 | 0.5789 |
-| Llama-3.1-8B zero-shot | LLM | 0.3979 | 0.4943 |
-| XLM-RoBERTa | Transformer | 0.3724 | 0.0000 |
-| mBERT | Transformer | 0.3535 | 0.5389 |
-
-**Key finding:** Classical ML outperformed all transformer and LLM approaches on this 
-small dataset (650 training samples), consistent with the small-data-regime hypothesis.
-
-## How to Run
-
-### Stage 1 — Classical ML Baseline (local)
+### 1. Baseline (no GPU, no API key required)
 ```bash
-pip install scikit-learn pandas numpy joblib
 python run_pipeline.py --stage baseline
 ```
 
-### Stage 2 — Transformer Fine-tuning (Kaggle recommended)
+### 2. LLM Evaluation (requires ANTHROPIC_API_KEY)
 ```bash
-python run_pipeline.py --stage transformer --model banglabert
-python run_pipeline.py --stage transformer --model xlmr
-python run_pipeline.py --stage transformer --model mbert
-```
-
-### Stage 3 — LLM Evaluation (Kaggle, GPU required)
-```bash
+export ANTHROPIC_API_KEY=sk-ant-...
 python run_pipeline.py --stage llm --mode zero_shot
 python run_pipeline.py --stage llm --mode few_shot_3
+python run_pipeline.py --stage llm --mode few_shot_5
+python run_pipeline.py --stage llm --mode cot
+# Limit samples for cost control:
+python run_pipeline.py --stage llm --mode few_shot_5 --max-samples 50
 ```
 
-## Dataset
-BanMANI.csv is not included in this repository. 
-Available at: [add your dataset source link here]
+### 3. Transformer Fine-tuning (requires GPU + pip install transformers torch)
+```bash
+pip install transformers torch
+python run_pipeline.py --stage transformer --model xlmr --epochs 5
+python run_pipeline.py --stage transformer --model banglabert --epochs 5
+```
 
-## Environment
-- Python 3.10+
-- transformers==4.44.0
-- torch, scikit-learn, pandas, numpy
-- Kaggle Tesla T4 GPU (Stages 2 & 3)
+### 4. Analysis & Comparison
+```bash
+python run_pipeline.py --stage analysis
+```
+
+## Models Supported
+| Key | Model | Notes |
+|-----|-------|-------|
+| `mbert` | bert-base-multilingual-cased | 104-language BERT |
+| `xlmr` | xlm-roberta-base | Best cross-lingual baseline |
+| `banglabert` | sagorsarker/bangla-bert-base | Domain-specific, best expected |
+| `xlmr_large` | xlm-roberta-large | Highest capacity |
+
+## Key Design Decisions
+- **Text combination**: `[CLAIM] <headline> [ARTICLE] <article>` for transformers; concatenation for TF-IDF
+- **Class weighting**: balanced weights applied to handle 72.5% MANI skew in training
+- **Bangla normalization**: zero-width char removal, nukta normalization, whitespace collapse
+- **Few-shot selection**: balanced strategy (k/2 MANI + k/2 NO_MANI)
+
+## Baseline Results (Computed)
+| Model | Accuracy | F1 Macro | F1 MANI |
+|-------|----------|----------|---------|
+| TF-IDF word+LR | 0.587 | 0.572 | 0.652 |
+| TF-IDF char+LR | 0.573 | 0.566 | 0.624 |
+| TF-IDF+SVM | 0.573 | 0.558 | 0.640 |
+
+## Dependencies
+```
+scikit-learn>=1.0
+pandas, numpy
+transformers>=4.30 (for transformers stage)
+torch>=2.0 (for transformers stage)
+anthropic>=0.20 (for LLM stage)
+```
