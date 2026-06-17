@@ -1,82 +1,90 @@
-# BanMANI Manipulation Detection — Research Pipeline
+# BanMANI: Detecting Manipulated Bangla News Headlines
+
+**Course:** CSE 4891 — Data Mining  
+ 
+---
+
+## What this project is about
+
+We detect manipulated Bangla news headlines using the BanMANI dataset — 800 samples where a headline has been subtly altered (wrong minister name, wrong number, wrong date) compared to the actual article. We compare three approaches: classical ML, fine-tuned transformers, and open-source LLM prompting.
+
+**Key finding:** The official BanMANI train/test split has a distribution mismatch (72.5% MANI train vs 40.7% MANI test) that artificially suppresses all reported scores by 0.11–0.19 F1 points.
+
+---
 
 ## Dataset
-- **BanMANI.csv** — 800 Bangla news samples (650 train / 150 test)
-- Labels: `MANI` (532) | `NO_MANI` (268)
-- Columns: `category`, `data_type`, `mani_status`, `altered_excerpt`, `original_excerpt`, `mani_news`, `original_news_article`
 
-## Project Structure
-```
-banmani_research/
-├── data/
-│   ├── BanMANI.csv
-│   └── preprocess.py          ← Bangla normalization + text combination
-├── models/
-│   ├── baseline_tfidf.py      ← TF-IDF + LR / SVM (no GPU needed)
-│   ├── transformer_finetune.py← mBERT / XLM-R / BanglaBERT fine-tuning
-│   └── llm_evaluation.py      ← Claude API zero-shot / few-shot / CoT
-├── results/
-│   ├── analysis.py            ← Error analysis + comparison tables
-│   └── outputs/               ← Saved results (JSON, LaTeX)
-└── run_pipeline.py            ← Main CLI entry point
-```
+- **Source:** [BanMANI on Kaggle](https://www.kaggle.com/datasets/saikasatter/banmani)
+- 800 samples (650 train / 150 test)
+- Labels: MANI (532) | NO_MANI (268)
+- Columns: `mani_news`, `original_news_article`, `mani_status`, `altered_excerpt`, `original_excerpt`, `category`
 
-## Quick Start
+---
 
-### 1. Baseline (no GPU, no API key required)
+## Notebooks
+
+| Notebook | Description | Link |
+|---|---|---|
+| `fine-tuning.ipynb` | mBERT, XLM-RoBERTa, BanglaBERT fine-tuning on Kaggle GPU | [Kaggle](https://www.kaggle.com/code/saikasatter/fine-tuning) |
+| `banmaniresearch.ipynb` | Qwen2.5-7B and Llama-3.1-8B zero-shot/few-shot evaluation | [Kaggle](https://www.kaggle.com/code/saikasatter/banmaniresearch) |
+
+---
+
+## How to run classical ML (no GPU needed)
+
 ```bash
+# Install dependencies
+pip install scikit-learn pandas numpy joblib
+
+# Run all three baselines
 python run_pipeline.py --stage baseline
 ```
 
-### 2. LLM Evaluation (requires ANTHROPIC_API_KEY)
-```bash
-export ANTHROPIC_API_KEY=sk-ant-...
-python run_pipeline.py --stage llm --mode zero_shot
-python run_pipeline.py --stage llm --mode few_shot_3
-python run_pipeline.py --stage llm --mode few_shot_5
-python run_pipeline.py --stage llm --mode cot
-# Limit samples for cost control:
-python run_pipeline.py --stage llm --mode few_shot_5 --max-samples 50
-```
+---
 
-### 3. Transformer Fine-tuning (requires GPU + pip install transformers torch)
-```bash
-pip install transformers torch
-python run_pipeline.py --stage transformer --model xlmr --epochs 5
-python run_pipeline.py --stage transformer --model banglabert --epochs 5
-```
+## Full Results
 
-### 4. Analysis & Comparison
-```bash
-python run_pipeline.py --stage analysis
-```
+### Official split (72.5% train / 40.7% test MANI)
 
-## Models Supported
-| Key | Model | Notes |
-|-----|-------|-------|
-| `mbert` | bert-base-multilingual-cased | 104-language BERT |
-| `xlmr` | xlm-roberta-base | Best cross-lingual baseline |
-| `banglabert` | sagorsarker/bangla-bert-base | Domain-specific, best expected |
-| `xlmr_large` | xlm-roberta-large | Highest capacity |
+| Model | Type | Strategy | F1 Macro | F1 MANI |
+|---|---|---|---|---|
+| TF-IDF word + LR | Classical ML | — | **0.5717** | 0.6517 |
+| TF-IDF char + LR | Classical ML | — | 0.5656 | 0.6235 |
+| TF-IDF + SVM | Classical ML | — | 0.5579 | 0.6404 |
+| BanglaBERT | Transformer | fine-tuned | 0.4258 | 0.5789 |
+| XLM-RoBERTa | Transformer | fine-tuned | 0.3724 | 0.0000 |
+| mBERT | Transformer | fine-tuned | 0.3535 | 0.5389 |
+| Qwen2.5-7B | Open LLM | zero-shot | 0.3724 | 0.0000 |
+| Qwen2.5-7B | Open LLM | few-shot 3 | 0.4073 | 0.0635 |
+| Llama-3.1-8B | Open LLM | zero-shot | 0.3979 | 0.4943 |
+| Llama-3.1-8B | Open LLM | few-shot 3 | 0.3724 | 0.0000 |
 
-## Key Design Decisions
-- **Text combination**: `[CLAIM] <headline> [ARTICLE] <article>` for transformers; concatenation for TF-IDF
-- **Class weighting**: balanced weights applied to handle 72.5% MANI skew in training
-- **Bangla normalization**: zero-width char removal, nukta normalization, whitespace collapse
-- **Few-shot selection**: balanced strategy (k/2 MANI + k/2 NO_MANI)
+### Re-stratified splits (matched distributions, ~66.5% MANI both splits)
 
-## Baseline Results (Computed)
-| Model | Accuracy | F1 Macro | F1 MANI |
-|-------|----------|----------|---------|
-| TF-IDF word+LR | 0.587 | 0.572 | 0.652 |
-| TF-IDF char+LR | 0.573 | 0.566 | 0.624 |
-| TF-IDF+SVM | 0.573 | 0.558 | 0.640 |
+| Model | Official F1 Macro | Re-stratified F1 Macro | Gained |
+|---|---|---|---|
+| TF-IDF word + LR | 0.5717 | 0.689 ± 0.037 | +0.117 |
+| BanglaBERT | 0.4258 | 0.611 ± 0.056 | +0.185 |
+| XLM-RoBERTa | 0.3724 | 0.400 ± 0.000 | +0.028 |
+| mBERT | 0.3535 | 0.473 ± 0.116 | +0.119 |
+
+---
+
+## Key findings
+
+1. **Classical ML beats transformers on the official split** — due to small training data (650 samples) and distribution mismatch
+2. **Distribution shift is a major confound** — the official split's 72.5%/40.7% mismatch was artificially suppressing all scores
+3. **Llama zero-shot nearly matches fine-tuned BanglaBERT** — F1 MANI 0.494 vs 0.579, with zero training
+4. **Few-shot prompting causes collapse** — adding 3 examples caused both LLMs to predict NO_MANI for everything
+5. **F1 MANI jumps dramatically under re-stratification** — XLM-R goes from 0.0 to 0.80, confirming models learned real patterns
+
+---
 
 ## Dependencies
+
 ```
 scikit-learn>=1.0
-pandas, numpy
-transformers>=4.30 (for transformers stage)
-torch>=2.0 (for transformers stage)
-anthropic>=0.20 (for LLM stage)
+pandas numpy joblib
+transformers==4.44.0   # for transformer fine-tuning
+torch>=2.0
 ```
