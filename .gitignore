@@ -23,3 +23,5 @@ results/outputs/transformer/
 # Windows
 Thumbs.db
 desktop.ini
+*.csv
+BanMANI.csv
