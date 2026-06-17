@@ -26,7 +26,7 @@ We detect manipulated Bangla news headlines using the BanMANI dataset — 800 sa
 | Notebook | Description | Link |
 |---|---|---|
 | `fine-tuning.ipynb` | mBERT, XLM-RoBERTa, BanglaBERT fine-tuning on Kaggle GPU | [Kaggle](https://www.kaggle.com/code/saikasatter/fine-tuning) |
-| `banmaniresearch.ipynb` | Qwen2.5-7B and Llama-3.1-8B zero-shot/few-shot evaluation | [Kaggle](https://www.kaggle.com/code/saikasatter/banmaniresearch) |
+| `llm_evaluation.ipynb` | Qwen2.5-7B and Llama-3.1-8B zero-shot/few-shot evaluation | [Kaggle](https://www.kaggle.com/code/saikasatter/banmaniresearch) |
 
 ---
 
