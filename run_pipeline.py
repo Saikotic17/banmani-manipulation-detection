@@ -33,15 +33,12 @@ def stage_baseline(args):
 
 
 def stage_llm(args):
-    from models.llm_evaluation import evaluate_llm
     print(f"\n🟨 STAGE: LLM Evaluation [{args.mode}]")
-    evaluate_llm(
-        csv_path=CSV,
-        mode=args.mode,
-        k_shot=int(args.mode.split('_')[-1]) if 'few_shot' in args.mode else 3,
-        max_samples=args.max_samples,
-        save_dir=RESULTS,
-    )
+    print("⚠️  LLM evaluation (Qwen2.5-7B-Instruct, Llama-3.1-8B-Instruct) is not")
+    print("    run through this CLI. It needs a GPU plus gated Hugging Face access")
+    print("    to Llama-3.1, so it lives in llm_evaluation.ipynb instead.")
+    print("    Open that notebook (e.g. on Kaggle) to reproduce the LLM results.")
+    print(f"    Results from a previous run are saved under: {RESULTS}")
 
 
 def stage_transformer(args):
@@ -58,9 +55,10 @@ def stage_transformer(args):
 
 
 def stage_analysis(args):
-    from results.analysis import run_full_analysis
     print("\n🟥 STAGE: Analysis & Comparison")
-    run_full_analysis(csv_path=CSV, results_dir=RESULTS)
+    print("⚠️  results/analysis.py does not exist in this repo yet, so this stage")
+    print("    can't run. Individual stage results are saved as JSON under:")
+    print(f"    {RESULTS}")
 
 
 # ── Argument Parser ───────────────────────────────────────────────────────────
@@ -123,3 +121,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
