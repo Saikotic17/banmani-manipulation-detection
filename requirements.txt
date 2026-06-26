@@ -1,0 +1,27 @@
+# --- Core (needed for everything: preprocess, baseline, robustness analysis) ---
+numpy>=1.24
+pandas>=2.0
+scikit-learn>=1.3
+joblib>=1.3
+
+# --- Transformer fine-tuning (mBERT, XLM-R, BanglaBERT) ---
+# Needed for `--stage transformer`
+torch>=2.0
+transformers==4.44.0
+
+# --- Open-source LLM evaluation (Qwen2.5-7B-Instruct, Llama-3.1-8B-Instruct) ---
+# Needed to reproduce llm_evaluation.ipynb. Run on a GPU (Kaggle T4/P100 or similar) --
+# both models are ~7-8B params and will not run usefully on CPU.
+accelerate>=0.30
+bitsandbytes>=0.43
+
+# --- Optional: only needed if pulling datasets/notebooks via the Kaggle API ---
+# kagglehub>=0.3
+
+# --- Notes ---
+# - meta-llama/Llama-3.1-8B-Instruct is gated on Hugging Face: you need an HF account,
+#   accepted access request for the model, and an HF_TOKEN environment variable set
+#   (the notebook reads this from Kaggle Secrets; locally use huggingface-cli login
+#   or export HF_TOKEN=...).
+# - The anthropic package is NOT needed -- this project evaluates open-source models
+#   only (no Claude API calls).
